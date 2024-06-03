@@ -115,7 +115,7 @@ class DeepSVDDTrainer(BaseTrainer):
         net = net.to(self.device)
 
         # Get test data loader
-        _, test_loader = dataset.loaders(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
+        test_loader, _ = dataset.loaders(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
 
         # Testing
         logger.info('Starting testing...')
@@ -148,7 +148,10 @@ class DeepSVDDTrainer(BaseTrainer):
         labels = np.array(labels)
         scores = np.array(scores)
 
-        self.test_auc = roc_auc_score(labels, scores)
+        normal_label = dataset.normal_classes[0]
+        auc_labels = [0 if label == normal_label else 1 for label in labels]
+
+        self.test_auc = roc_auc_score(auc_labels, scores)
         logger.info('Test set AUC: {:.2f}%'.format(100. * self.test_auc))
 
         logger.info('Finished testing.')

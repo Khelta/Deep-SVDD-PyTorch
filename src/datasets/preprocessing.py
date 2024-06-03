@@ -2,14 +2,14 @@ import torch
 import numpy as np
 
 
-def get_target_label_idx(labels, targets):
+def get_target_label_idx(labels, targets, invert=False):
     """
     Get the indices of labels that are included in targets.
     :param labels: array of labels
     :param targets: list/tuple of target labels
     :return: list with indices of target labels
     """
-    return np.argwhere(np.isin(labels, targets)).flatten().tolist()
+    return np.argwhere(np.isin(labels, targets, invert=invert)).flatten().tolist()
 
 
 def global_contrast_normalization(x: torch.tensor, scale='l2'):
