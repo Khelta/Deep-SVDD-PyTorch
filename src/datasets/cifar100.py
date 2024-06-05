@@ -1,6 +1,6 @@
 from torch.utils.data import Subset
 from PIL import Image
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import CIFAR100
 from base.torchvision_dataset import TorchvisionDataset
 from .preprocessing import get_target_label_idx, global_contrast_normalization
 
@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 import numpy as np
 
 
-class CIFAR10_Dataset(TorchvisionDataset):
+class CIFAR100_Dataset(TorchvisionDataset):
     def __init__(self, root: str, normal_class=5, p=0.25):
         super().__init__(root)
 
@@ -29,8 +29,8 @@ class CIFAR10_Dataset(TorchvisionDataset):
 
         target_transform = transforms.Lambda(lambda x: int(x in self.outlier_classes))
 
-        train_set_all = MyCIFAR10(root=self.root, train=True, download=True,
-                                  transform=transform, target_transform=target_transform)
+        train_set_all = MyCIFAR100(root=self.root, train=True, download=True,
+                                   transform=transform, target_transform=target_transform)
         self.train_set_all = train_set_all
         # Subset train set to normal class
         train_idx_normal = get_target_label_idx(train_set_all.targets, self.normal_classes)
@@ -39,18 +39,18 @@ class CIFAR10_Dataset(TorchvisionDataset):
         train_idx_anormal = list(np.random.choice(train_idx_anormal, i, replace=False))
         self.train_set = Subset(train_set_all, np.concatenate((train_idx_normal, train_idx_anormal)))
 
-        self.test_set = MyCIFAR10(root=self.root, train=False, download=True,
-                                  transform=transform, target_transform=target_transform)
+        self.test_set = MyCIFAR100(root=self.root, train=False, download=True,
+                                   transform=transform, target_transform=target_transform)
 
 
-class MyCIFAR10(CIFAR10):
-    """Torchvision CIFAR10 class with patch of __getitem__ method to also return the index of a data sample."""
+class MyCIFAR100(CIFAR100):
+    """Torchvision CIFAR100 class with patch of __getitem__ method to also return the index of a data sample."""
 
     def __init__(self, *args, **kwargs):
-        super(MyCIFAR10, self).__init__(*args, **kwargs)
+        super(MyCIFAR100, self).__init__(*args, **kwargs)
 
     def __getitem__(self, index):
-        """Override the original method of the CIFAR10 class.
+        """Override the original method of the CIFAR100 class.
         Args:
             index (int): Index
         Returns:

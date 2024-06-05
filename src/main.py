@@ -1,8 +1,9 @@
-import click
 import torch
 import logging
 import random
 import numpy as np
+import os
+import sys
 
 from utils.config import Config
 from utils.visualization.plot_images_grid import plot_images_grid
@@ -127,15 +128,19 @@ def main(dataset_name, net_name, xp_path, data_path, load_config, load_model, ob
     # idx_sorted = indices[labels == 0][np.argsort(scores[labels == 0])]  # sorted from lowest to highest anomaly score
     idx_sorted = indices[np.argsort(scores)]
 
-    if dataset_name in ('mnist', 'cifar10'):
+    if dataset_name in ('mnist', 'fashion', 'cifar10', 'cifar100', 'svhn'):
 
-        if dataset_name == 'mnist':
+        if dataset_name in ('mnist', 'fashion'):
             X_normals = dataset.train_set_all.train_data[idx_sorted[:32], ...].unsqueeze(1)
             X_outliers = dataset.train_set_all.train_data[idx_sorted[-32:], ...].unsqueeze(1)
 
-        if dataest_name == 'cifar10':
-            X_normals = torch.tensor(np.transpose(dataset.test_set.test_data[idx_sorted[:32], ...], (0, 3, 1, )2))
-            X_outliers = torch.tensor(np.transpose(dataset.test_set.test_data[idx_sorted[-32:], ...], (0, 3, 1, 2)))
+        if dataset_name in ('cifar10', 'cifar100'):
+            X_normals = torch.tensor(np.transpose(dataset.train_set_all.data[idx_sorted[:32], ...], (0, 3, 1, 2)))
+            X_outliers = torch.tensor(np.transpose(dataset.train_set_all.data[idx_sorted[-32:], ...], (0, 3, 1, 2)))
+
+        if dataset_name == "svhn":
+            X_normals = torch.tensor(np.transpose(dataset.train_set_all.data[idx_sorted[:32], ...], (0, 1, 2, 3)))
+            X_outliers = torch.tensor(np.transpose(dataset.train_set_all.data[idx_sorted[-32:], ...], (0, 1, 2, 3)))
 
         plot_images_grid(X_normals, export_img=xp_path + '/normals', title='Most normal examples', padding=2)
         plot_images_grid(X_outliers, export_img=xp_path + '/outliers', title='Most anomalous examples', padding=2)
@@ -143,13 +148,38 @@ def main(dataset_name, net_name, xp_path, data_path, load_config, load_model, ob
     # Save results, model, and configuration
     deep_SVDD.save_results(export_json=xp_path + '/results.json')
     cfg.save_config(export_json=xp_path + '/config.json')
-    deep_SVDD.save_model(export_model=xp_path + '/model.tar')
-    
+    # deep_SVDD.save_model(export_model=xp_path + '/model.tar')
 
+
+abs_path = os.path.dirname(os.path.realpath(__file__))
 
 if __name__ == '__main__':
+    algorithms = ["mnist", "fashion", "cifar10", "cifar100", "svhn"]
+    net = {"mnist": "mnist_LeNet",
+           "fashion": "mnist_LeNet",
+           "cifar10": "cifar10_LeNet",
+           "cifar100": "cifar10_LeNet",
+           "svhn": "cifar10_LeNet"}
+    if len(sys.argv) != 2:
+        raise ValueError("Argument missing. Must be " + str(algorithms))
+    elif sys.argv[1] not in algorithms:
+        raise ValueError('ARGV must be in ' + str(algorithms))
+
+    algorithm = sys.argv[1]
+
     for cycle in range(5):
         for label in range(10):
-            main("mnist", "mnist_LeNet", "./log/{}/{}".format(cycle, label), "./data", objective='one-class', nu=0.1,
-                 device="cuda", seed=-1, optimizer_name="adam", lr=0.001, n_epochs=10, lr_milestone=(), batch_size=256,
-                 weight_decay=1e-6, pretrain=False, ae_optimizer_name="adam", ae_lr=0.001, ae_n_epochs=100, ae_lr_milestone=(), ae_batch_size=256, ae_weight_decay=1e-6, n_jobs_dataloader=0, normal_class=label, load_config=None, load_model=None)
+            for p in [0.05, 0.15, 0.25]:
+                path_to_log = os.path.join(abs_path, "../log/{}/{}/{}/{}".format(algorithm, p, cycle, label))
+                path_to_data = os.path.join(abs_path, "../data")
+                if not os.path.exists(path_to_log):
+                    os.makedirs(path_to_log)
+
+                onlyfiles = next(os.walk(path_to_log))[2]
+                if len(onlyfiles) < 2:
+                    main(algorithm, net[algorithm], path_to_log, path_to_data, objective='one-class', nu=0.1,
+                         device="cuda", seed=-1, optimizer_name="adam", lr=0.001, n_epochs=30, lr_milestone=(), batch_size=256,
+                         weight_decay=1e-6, pretrain=False, ae_optimizer_name="adam", ae_lr=0.001, ae_n_epochs=100, ae_lr_milestone=(),
+                         ae_batch_size=256, ae_weight_decay=1e-6, n_jobs_dataloader=0, normal_class=label, load_config=None, load_model=None, p=p)
+                else:
+                    print("\n Skipping Label {} p {} Cycle {}".format(label, p, cycle))
