@@ -1,6 +1,7 @@
 log/*
 data/*
 .vscode/*
+convert/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
