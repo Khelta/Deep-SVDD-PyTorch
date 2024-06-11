@@ -14,7 +14,7 @@ class CIFAR100_Dataset(TorchvisionDataset):
 
         self.n_classes = 2  # 0: normal, 1: outlier
         self.normal_classes = tuple([normal_class])
-        self.outlier_classes = list(range(0, 10))
+        self.outlier_classes = list(range(0, 100))
         self.outlier_classes.remove(normal_class)
 
         # Pre-computed min and max values (after applying GCN) from train data per class

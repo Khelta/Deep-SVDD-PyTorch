@@ -19,7 +19,7 @@ def convert(dataset_name):
                     data = json.load(json_file)
                     df = pd.DataFrame(data=data["test_scores"], columns=["Id", "Label", "Loss"])
                     df = df.set_index("Id").sort_values("Loss")
-                    filename = "-".join([str(x) for x in [dataset_name, label, p, cycle / 10, 30, "DeepSVDD", "train", "loss.csv"]])
+                    filename = "-".join([str(x) for x in [dataset_name, label, p, 0.5 + cycle / 10, 30, "DeepSVDD", "train", "loss.csv"]])
                     filepath = os.path.join(abs_path, "convert/" + dataset_name + "/0/" + filename)
                     df.to_csv(filepath)
 

@@ -168,7 +168,7 @@ if __name__ == '__main__':
     algorithm = sys.argv[1]
 
     for cycle in range(5):
-        for label in range(10):
+        for label in range(10 if algorithm != "cifar100" else 100):
             for p in [0.05, 0.15, 0.25]:
                 path_to_log = os.path.join(abs_path, "../log/{}/{}/{}/{}".format(algorithm, p, cycle, label))
                 path_to_data = os.path.join(abs_path, "../data")
